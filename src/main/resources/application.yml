@@ -1,0 +1,94 @@
+# server
+server:
+  port: 8080
+  shutdown: graceful
+  compression:
+    enabled: true
+    mime-types: application/json,application/xml,text/html,text/xml,text/plain
+    min-response-size: 512KB
+
+spring:
+  profiles:
+    active: local
+  datasource:
+    driver-class-name: org.postgresql.Driver
+
+  servlet:
+    multipart:
+      max-file-size: 50MB # 업로드되는 단일 파일 최대 크기
+      max-request-size: 50MB # 하나의 요청에서 허용되는 전체 파일 크기
+
+  cloud:
+    aws:
+      credentials:
+        access-key: dummy
+        secret-key: dummy
+      region:
+        static: ap-northeast-2
+      s3:
+        bucket: dummy
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        create_empty_composites:
+          enabled: true
+    show-sql: true
+    open-in-view: false
+
+
+app:
+  jwt:
+    access-token-expire-time: 900000 # 15분 (15 * 60 * 1000) - 기본값
+    refresh-token-expire-time: 2592000000 # 30일 (30 * 24 * 60 * 60 * 1000)
+
+# swagger
+springdoc:
+  swagger-ui:
+    enabled: true
+  use-fqn: true
+
+## actuator
+management:
+  server:
+    ### 스캐닝 회피용
+    port: 8088
+  endpoints:
+    enabled-by-default: false
+    web:
+      base-path: /checker
+      exposure:
+        include: health,metrics,threads,prometheus
+
+  endpoint:
+    metrics:
+      enabled: true
+    health:
+      enabled: true
+    prometheus:
+      enabled: true
+
+### dummy
+security:
+  jwt:
+    token: T0V3jK5557iP9Sb8H4rV8XxY7A3Z6jT9N5p2R1sLm1115F7P
+
+kakao:
+  redirect_uri: http://localhost:3000
+
+apify:
+  token: ${APIFY_TOKEN}
+  scraper:
+    instagram:
+      profile_scraper_id: ${INSTA_PROFILE_SCRAPER_ID}
+      contents_scraper_id: ${INSTA_CONTENT_SCRAPER_ID}
+
+client-url: http://localhost:3000
+server-url: https://dev-api.hryedam.co.kr
+
+
+### 토스에서 준 테스트 값임
+toss-secret: test_sk_zXLkKEypNArWmo50nX3lmeaxYG5R

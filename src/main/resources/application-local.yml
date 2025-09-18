@@ -1,0 +1,54 @@
+spring:
+  config:
+    activate:
+      on-profile: local
+  datasource:
+    url: jdbc:postgresql://localhost:5432/tts-project
+    username: tts-project
+    password: tts-project
+
+  cloud:
+    aws:
+      credentials:
+        access-key: dummy
+        secret-key: dummy
+      region:
+        static: ap-northeast-2
+      s3:
+        bucket: file.kids.english
+  ai:
+    openai:
+      api-key: ssss
+      chat:
+        options:
+          model: ssss
+
+app:
+  cors:
+    allow-origins:
+      - http://localhost:3000
+      - https://api-dev.puffin.kr
+
+  aws:
+    sqs:
+      s3-file-upload:
+        queue-url: dummy
+
+
+meta:
+  scope: profile, email
+  api_key: dummy
+
+application:
+  env: local
+
+apify:
+  token: dummy
+  scraper:
+    instagram:
+      profile_scraper_id: dummy
+      contents_scraper_id: dummy
+
+security:
+  jwt:
+    expiration:
