@@ -31,6 +31,15 @@ dependencies {
 
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
+
+    // AWS SDK BOM
+    implementation platform("software.amazon.awssdk:bom:2.25.48")
+
+    // Polly
+    implementation "software.amazon.awssdk:polly"
+
+    // S3
+    implementation "software.amazon.awssdk:s3"
 }
 
 tasks.named('test') {
