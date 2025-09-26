@@ -41,10 +41,16 @@ public class PdfReader {
             String ssml = buildParagraphSSML(sentences, metadata);
             segments.add(new ParagraphSegment(idx++, sentences, ssml));
         }
+
+        for (ParagraphSegment segment : segments) {
+            System.out.println("segment = " + segment);
+        }
         return segments;
     }
 
     private List<String> extractCleanText(MultipartFile file, BookMetadata metadata) {
+        log.info("Extracting clean text from file {}", file.getOriginalFilename());
+
         List<String> cleanedPages = new ArrayList<>();
 
         try (PDDocument document = Loader.loadPDF(file.getBytes())) {
@@ -65,10 +71,16 @@ public class PdfReader {
                 String filteredText = filterContent(rawText, metadata.getLanguage());
                 if (!filteredText.isBlank()) {
                     cleanedPages.add(filteredText.trim());
+                }else {
+                    log.info("Skipped paragraph of {}", page);
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new RuntimeException("PDF 읽기 실패: " + e.getMessage(), e);
+        }
+
+        for (String cleanedPage : cleanedPages) {
+            System.out.println("cleanedPage = " + cleanedPage);
         }
 
         return cleanedPages;
@@ -79,6 +91,7 @@ public class PdfReader {
 
         // 첫 페이지나 마지막 페이지의 판권/ISBN 페이지 제거
         if ((page == 1 || page == pageCount) && containsBoilerplate(normalized, language)) {
+            log.info("Skipping paragraph of {}", page);
             return true;
         }
 
@@ -118,9 +131,13 @@ public class PdfReader {
 
         for (String pattern : boilerplatePatterns) {
             if (text.contains(pattern)) {
+                log.info("containsEnglishBoilerplate : true");
+                System.out.println("text = " + text);
                 return true;
             }
         }
+
+        log.info("containsEnglishBoilerplate : false");
         return false;
     }
 
@@ -132,9 +149,12 @@ public class PdfReader {
 
         for (String pattern : koreanBoilerplate) {
             if (text.contains(pattern)) {
+                log.info("containsKoreanBoilerplate : true");
                 return true;
             }
         }
+
+        log.info("containsKoreanBoilerplate : false");
         return false;
     }
 
@@ -146,9 +166,11 @@ public class PdfReader {
 
         for (String pattern : japaneseBoilerplate) {
             if (text.contains(pattern)) {
+                log.info("containsJapaneseBoilerplate : true");
                 return true;
             }
         }
+        log.info("containsJapaneseBoilerplate : false");
         return false;
     }
 
@@ -160,9 +182,11 @@ public class PdfReader {
 
         for (String pattern : chineseBoilerplate) {
             if (text.contains(pattern)) {
+                log.info("containsChineseBoilerplate : true");
                 return true;
             }
         }
+        log.info("containsChineseBoilerplate : false");
         return false;
     }
 
@@ -213,6 +237,8 @@ public class PdfReader {
     }
 
     private String buildSSML(List<String> contents, BookMetadata metadata) {
+        log.info("Building SSML for {}", metadata.getTitle());
+
         StringBuilder sb = new StringBuilder();
         sb.append("<speak>");
 
