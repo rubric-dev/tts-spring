@@ -4,7 +4,7 @@ import java.util.List;
 
 public class XhtmlBuilder {
 
-    public String buildChapterXhtml(String title, List<ParagraphSegment> segments) {
+    public String buildChapterXhtml(String title, List<ParagraphSegment> segments, int imageCount) {
         StringBuilder sb = new StringBuilder();
         sb.append("""
                 <?xml version="1.0" encoding="UTF-8"?>
@@ -28,6 +28,13 @@ public class XhtmlBuilder {
                         .append("</span> ");
             }
             sb.append("</p>");
+        }
+
+        // 이미지 페이지 추가
+        for (int i = 1; i <= imageCount; i++) {
+            sb.append("<div class=\"page-image\">\n")
+              .append("  <img src=\"../images/page-").append(i).append(".png\" alt=\"Page ").append(i).append("\"/>\n")
+              .append("</div>\n");
         }
 
         sb.append("</body></html>");

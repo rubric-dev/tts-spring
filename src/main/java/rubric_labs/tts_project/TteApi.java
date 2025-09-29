@@ -44,6 +44,10 @@ public class TteApi {
         // 2) 문단/문장 추출
         List<ParagraphSegment> segments = pdfReader.extractParagraphs(file);
 
+        // 텍스트 + 오디오 외에 이미지 추출
+        List<byte[]> pageImages = pdfReader.extractPageImages(file);
+        int imageCount = pageImages != null ? pageImages.size() : 0;
+
         // 3) 메타데이터의 음성으로 문단별 Polly 호출
         List<ParagraphTts> ttsList = new ArrayList<>();
         for (ParagraphSegment seg : segments) {
@@ -52,7 +56,7 @@ public class TteApi {
 
         // 4) XHTML / SMIL / OPF / container.xml 생성 (메타데이터 활용)
         XhtmlBuilder xhtmlBuilder = new XhtmlBuilder();
-        String xhtml = xhtmlBuilder.buildChapterXhtml(metadata.getTitle(), segments);
+        String xhtml = xhtmlBuilder.buildChapterXhtml(metadata.getTitle(), segments, imageCount);
 
         SmilBuilder smilBuilder = new SmilBuilder();
         String smil = smilBuilder.buildChapterSmil("text/chap1.xhtml", segments, ttsList, "audio");
@@ -63,16 +67,17 @@ public class TteApi {
                 metadata.getTitle(),
                 metadata.getAuthor(),
                 metadata.getLanguage(),
-                segments.size()
+                segments.size(),
+                imageCount
         );
         String containerXml = opfBuilder.buildContainerXml();
 
         // 5) EPUB 패키징
         EpubPackager packager = new EpubPackager();
         NavBuilder navBuilder = new NavBuilder();
-        String nav = navBuilder.buildNav(metadata.getTitle());
+        String nav = navBuilder.buildNav(metadata.getTitle(), imageCount);
 
-        byte[] epubBytes = packager.buildEpub(xhtml, smil, opf, containerXml, nav, ttsList);
+        byte[] epubBytes = packager.buildEpub(xhtml, smil, opf, containerXml, nav, ttsList, pageImages);
 
         // 출력 파일명을 책 제목 기반으로 생성
         String epubFilename = sanitizeFilename(metadata.getTitle()) + ".epub";

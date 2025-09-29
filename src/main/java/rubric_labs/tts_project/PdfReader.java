@@ -4,10 +4,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.Loader;
 import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.rendering.PDFRenderer;
 import org.apache.pdfbox.text.PDFTextStripper;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -26,6 +30,25 @@ public class PdfReader {
 
         log.info("Polly SSML request length={} for book: {}", result.length(), metadata.getTitle());
         return result;
+    }
+
+
+    public List<byte[]> extractPageImages(MultipartFile file) {
+        List<byte[]> images = new ArrayList<>();
+
+        try (PDDocument document = Loader.loadPDF(file.getBytes())) {
+            PDFRenderer renderer = new PDFRenderer(document);
+            for (int page = 0; page < document.getNumberOfPages(); page++) {
+                BufferedImage bim = renderer.renderImageWithDPI(page, 150); // 해상도 조절 가능
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ImageIO.write(bim, "png", baos);
+                images.add(baos.toByteArray());
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("PDF 이미지 추출 실패: " + e.getMessage(), e);
+        }
+
+        return images;
     }
 
     public List<ParagraphSegment> extractParagraphs(MultipartFile file) {

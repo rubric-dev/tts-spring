@@ -13,7 +13,7 @@ public class EpubPackager {
 
     public byte[] buildEpub(String xhtml, String smil, String opf, String containerXml,
                             String nav,
-                            List<ParagraphTts> ttsList) {
+                            List<ParagraphTts> ttsList, List<byte[]> pageImages) {
         try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
              ZipOutputStream zos = new ZipOutputStream(baos, StandardCharsets.UTF_8)) {
 
@@ -37,6 +37,15 @@ public class EpubPackager {
                 String name = "OEBPS/audio/chap1_p" + t.getParagraphIndex() + ".mp3";
                 put(zos, name, t.getMp3());
             }
+
+            // 5.5) OEBPS/images/page-<index>.png
+            if (pageImages != null) {
+                for (int i = 0; i < pageImages.size(); i++) {
+                    String imgPath = String.format("OEBPS/images/page-%d.png", i + 1);
+                    put(zos, imgPath, pageImages.get(i));
+                }
+            }
+
 
             // 6) OEBPS/content.opf
             put(zos, "OEBPS/content.opf", opf.getBytes(StandardCharsets.UTF_8));

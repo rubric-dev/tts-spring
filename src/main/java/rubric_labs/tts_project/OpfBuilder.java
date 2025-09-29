@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter;
 
 public class OpfBuilder {
 
-    public String buildOpf(String bookId, String title, String author, String language, int paragraphCount) {
+    public String buildOpf(String bookId, String title, String author, String language, int paragraphCount, int imageCount) {
         StringBuilder sb = new StringBuilder();
         sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>")
                 .append("<package xmlns=\"http://www.idpf.org/2007/opf\" version=\"3.0\" unique-identifier=\"BookId\">")
@@ -46,6 +46,13 @@ public class OpfBuilder {
                     .append("\" href=\"audio/chap1_p").append(i).append(".mp3\" media-type=\"audio/mpeg\"/>");
         }
 
+        // 이미지 파일들
+        for (int i = 1; i <= imageCount; i++) {
+            sb.append("<item id=\"page").append(i)
+              .append("\" href=\"images/page-").append(i)
+              .append(".png\" media-type=\"image/png\"/>");
+        }
+
         sb.append("</manifest>")
 
                 // 읽기 순서
@@ -64,8 +71,8 @@ public class OpfBuilder {
     }
 
     // 오버로드된 메서드 (기존 호환성 유지)
-    public String buildOpf(String bookId, String title, String language, int paragraphCount) {
-        return buildOpf(bookId, title, "Unknown Author", language, paragraphCount);
+    public String buildOpf(String bookId, String title, String language, int paragraphCount, int imageCount) {
+        return buildOpf(bookId, title, "Unknown Author", language, paragraphCount, imageCount);
     }
 
     public String buildContainerXml() {
