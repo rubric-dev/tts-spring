@@ -15,7 +15,7 @@ spring:
       region:
         static: ap-northeast-2
       s3:
-        bucket: file.kids.english
+        bucket: files-kids-english
   ai:
     openai:
       api-key: ssss

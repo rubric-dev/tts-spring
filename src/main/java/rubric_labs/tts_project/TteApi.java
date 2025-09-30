@@ -174,6 +174,8 @@ public class TteApi {
                 .body(epubBytes);
     }
 
+    // TteApi.java의 makeEpubV2WithS3 메서드를 다음과 같이 수정
+
     @PostMapping(value = "/epub/v2/s3", consumes = {MediaType.MULTIPART_FORM_DATA_VALUE})
     public ResponseEntity<ManifestResponse> makeEpubV2WithS3(@RequestPart("file") MultipartFile file) {
         try {
@@ -215,13 +217,23 @@ public class TteApi {
                 log.info("페이지 {}/{} 처리 완료", pageNumber, pageImages.size());
             }
 
-            // 5. XHTML / SMIL / OPF 생성
+            // 5. ✅ 페이지별 XHTML 생성
             XhtmlBuilder xhtmlBuilder = new XhtmlBuilder();
-            String xhtml = xhtmlBuilder.buildChapterXhtml(metadata.getTitle(), segments, pageImages.size());
+            List<XhtmlBuilder.PageXhtml> pageXhtmls = xhtmlBuilder.buildPageXhtmls(
+                    metadata.getTitle(),
+                    segments,
+                    pageImages.size()
+            );
 
+            // 6. ✅ 페이지별 SMIL 생성
             SmilBuilder smilBuilder = new SmilBuilder();
-            String smil = smilBuilder.buildChapterSmil("text/chap1.xhtml", segments, ttsList, "audio");
+            List<SmilBuilder.PageSmil> pageSmils = smilBuilder.buildPageSmils(
+                    segments,
+                    ttsList,
+                    "audio"
+            );
 
+            // 7. ✅ OPF 생성 (페이지별 spine)
             OpfBuilder opfBuilder = new OpfBuilder();
             String opf = opfBuilder.buildOpf(
                     metadata.getBookId(),
@@ -233,14 +245,23 @@ public class TteApi {
             );
             String containerXml = opfBuilder.buildContainerXml();
 
-            // 6. EPUB 패키징
-            EpubPackager packager = new EpubPackager();
+            // 8. Nav 생성
             NavBuilder navBuilder = new NavBuilder();
             String nav = navBuilder.buildNav(metadata.getTitle(), pageImages.size());
 
-            byte[] epubBytes = packager.buildEpub(xhtml, smil, opf, containerXml, nav, ttsList, pageImages);
+            // 9. ✅ EPUB 패키징 (페이지별 파일들)
+            EpubPackager packager = new EpubPackager();
+            byte[] epubBytes = packager.buildEpubWithPages(
+                    pageXhtmls,   // 페이지별 XHTML 리스트
+                    pageSmils,    // 페이지별 SMIL 리스트
+                    opf,
+                    containerXml,
+                    nav,
+                    ttsList,
+                    pageImages
+            );
 
-            // 7. S3에 업로드 (bookId 기반 경로)
+            // 10. S3에 업로드 (bookId 기반 경로)
             String manifestUrl = s3UploadService.uploadEpubWithResources(
                     bookId,
                     metadata,
@@ -250,12 +271,13 @@ public class TteApi {
                     segments
             );
 
-            // 8. manifest.json URL 반환
+            // 11. manifest.json URL 반환
+            log.info("✅ EPUB V2 생성 완료: {}", manifestUrl);
             return ResponseEntity.ok(new ManifestResponse(manifestUrl, bookId));
 
         } catch (Exception e) {
             log.error("EPUB V2 S3 업로드 실패", e);
-            return ResponseEntity.status(500).build();
+            return ResponseEntity.status(500).body(null);
         }
     }
 

@@ -32,13 +32,20 @@ public class OpfBuilder {
 
                 .append("<manifest>")
                 // 네비게이션 파일
-                .append("<item id=\"nav\" href=\"nav.xhtml\" media-type=\"application/xhtml+xml\" properties=\"nav\"/>")
+                .append("<item id=\"nav\" href=\"nav.xhtml\" media-type=\"application/xhtml+xml\" properties=\"nav\"/>");
 
-                // 챕터 파일 (미디어 오버레이 연결)
-                .append("<item id=\"chap1\" href=\"text/chap1.xhtml\" media-type=\"application/xhtml+xml\" media-overlay=\"smil1\"/>")
+        // ✅ 페이지별 XHTML 파일 (미디어 오버레이 연결)
+        for (int i = 1; i <= imageCount; i++) {
+            sb.append("<item id=\"page").append(i)
+                    .append("\" href=\"text/page").append(i).append(".xhtml\" media-type=\"application/xhtml+xml\"")
+                    .append(" media-overlay=\"smil").append(i).append("\"/>");
+        }
 
-                // SMIL 파일
-                .append("<item id=\"smil1\" href=\"smil/chap1.smil\" media-type=\"application/smil+xml\"/>");
+        // ✅ 페이지별 SMIL 파일
+        for (int i = 1; i <= imageCount; i++) {
+            sb.append("<item id=\"smil").append(i)
+                    .append("\" href=\"smil/page").append(i).append(".smil\" media-type=\"application/smil+xml\"/>");
+        }
 
         // 오디오 파일들
         for (int i = 1; i <= paragraphCount; i++) {
@@ -48,21 +55,23 @@ public class OpfBuilder {
 
         // 이미지 파일들
         for (int i = 1; i <= imageCount; i++) {
-            sb.append("<item id=\"page").append(i)
-              .append("\" href=\"images/page-").append(i)
-              .append(".png\" media-type=\"image/png\"/>");
+            sb.append("<item id=\"img").append(i)
+                    .append("\" href=\"images/page-").append(i)
+                    .append(".png\" media-type=\"image/png\"/>");
         }
 
-        sb.append("</manifest>")
+        sb.append("</manifest>");
 
-                // 읽기 순서
-                .append("<spine>")
-                .append("<itemref idref=\"chap1\"/>")
-                .append("</spine>")
+        // ✅ 페이지별 spine 생성
+        sb.append("<spine>");
+        for (int i = 1; i <= imageCount; i++) {
+            sb.append("<itemref idref=\"page").append(i).append("\"/>");
+        }
+        sb.append("</spine>");
 
-                // 가이드 (선택사항)
-                .append("<guide>")
-                .append("<reference type=\"text\" title=\"Start\" href=\"text/chap1.xhtml\"/>")
+        // 가이드 (선택사항)
+        sb.append("<guide>")
+                .append("<reference type=\"text\" title=\"Start\" href=\"text/page1.xhtml\"/>")
                 .append("</guide>")
 
                 .append("</package>");
