@@ -14,25 +14,24 @@ public class XhtmlBuilder {
                 """).append(escape(title)).append("""
                     </title>
                     <meta charset="UTF-8"/>
+                    <style>
+                      .page-image { 
+                        cursor: pointer; 
+                        margin: 20px 0;
+                        text-align: center;
+                      }
+                      .page-image img { 
+                        max-width: 100%; 
+                        height: auto;
+                      }
+                    </style>
                   </head>
                   <body>
                 """);
 
-        for (ParagraphSegment seg : segments) {
-            sb.append("<p>");
-            List<String> sentences = seg.getSentences();
-            for (int i = 0; i < sentences.size(); i++) {
-                String id = "s" + seg.getIndex() + "_" + (i + 1);
-                sb.append("<span id=\"").append(id).append("\" epub:type=\"bodymatter\">")
-                        .append(escape(sentences.get(i)))
-                        .append("</span> ");
-            }
-            sb.append("</p>");
-        }
-
-        // 이미지 페이지 추가
+        // 페이지별 이미지 + 오디오 연결
         for (int i = 1; i <= imageCount; i++) {
-            sb.append("<div class=\"page-image\">\n")
+            sb.append("<div class=\"page-image\" id=\"page").append(i).append("\" epub:type=\"bodymatter\">\n")
               .append("  <img src=\"../images/page-").append(i).append(".png\" alt=\"Page ").append(i).append("\"/>\n")
               .append("</div>\n");
         }

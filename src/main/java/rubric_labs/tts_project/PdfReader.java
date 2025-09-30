@@ -284,6 +284,53 @@ public class PdfReader {
         return sb.toString();
     }
 
+    /**
+     * 페이지별로 텍스트를 추출하여 반환
+     */
+    public List<String> extractTextByPage(MultipartFile file) {
+        List<String> pageTexts = new ArrayList<>();
+        BookMetadata metadata = metadataExtractor.extractMetadata(file);
+
+        try (PDDocument document = Loader.loadPDF(file.getBytes())) {
+            PDFTextStripper stripper = new PDFTextStripper();
+            int pageCount = document.getNumberOfPages();
+
+            for (int page = 1; page <= pageCount; page++) {
+                stripper.setStartPage(page);
+                stripper.setEndPage(page);
+
+                String rawText = stripper.getText(document);
+                String cleanText = filterContent(rawText, metadata.getLanguage());
+
+                pageTexts.add(cleanText.trim());
+            }
+        } catch (Exception e) {
+            throw new RuntimeException("PDF 페이지별 텍스트 추출 실패: " + e.getMessage(), e);
+        }
+
+        return pageTexts;
+    }
+
+    /**
+     * 페이지 텍스트를 SSML로 변환
+     */
+    public String convertToSSML(String text, BookMetadata metadata) {
+        String safe = sanitize(text, metadata.getLanguage());
+        List<String> sentences = splitSentences(safe, metadata.getLanguage());
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("<speak><p>");
+        for (String sentence : sentences) {
+            String trimmed = sentence.trim();
+            if (!trimmed.isBlank()) {
+                sb.append("<s>").append(trimmed).append("</s>");
+            }
+        }
+        sb.append("</p></speak>");
+
+        return sb.toString();
+    }
+
     private String buildParagraphSSML(List<String> sentences, BookMetadata metadata) {
         StringBuilder sb = new StringBuilder();
         sb.append("<speak><p>");
@@ -297,7 +344,9 @@ public class PdfReader {
         return sb.toString();
     }
 
-    private String sanitize(String text, String language) {
+    // PdfReader.java에 추가
+
+    public String sanitize(String text, String language) {
         String sanitized = text
                 .replace("&", "&amp;")
                 .replace("<", "&lt;")
@@ -313,13 +362,12 @@ public class PdfReader {
                 sanitized = sanitized.replace("\u201C", "\"").replace("\u201D", "\"")
                         .replace("\u2018", "'").replace("\u2019", "'");
                 break;
-            // 일본어, 중국어는 기본 처리
         }
 
         return sanitized.replaceAll("\\.\\.", ".").replace("\n", " ");
     }
 
-    private List<String> splitSentences(String text, String language) {
+    public List<String> splitSentences(String text, String language) {
         String sentencePattern = switch (language) {
             case "ko" -> "(?<=[.!?。！？])\\s+";
             case "ja" -> "(?<=[.!?。！？])\\s+";

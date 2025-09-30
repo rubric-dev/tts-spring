@@ -5,53 +5,27 @@ import java.util.List;
 public class SmilBuilder {
 
     /**
-     * 문단별 mp3와 문장 시작시각(ms)을 사용해 SMIL 생성.
-     * clipEnd는 다음 문장 시작시각 - 0.01s 를 사용.
-     * 문단의 마지막 문장은 clipEnd 생략(해당 mp3 끝까지 재생).
+     * 페이지별 mp3와 이미지를 연결하는 SMIL 생성
      */
     public String buildChapterSmil(String chapterXhtmlPath,
                                    List<ParagraphSegment> segments,
                                    List<ParagraphTts> ttsList,
                                    String audioDir) {
         StringBuilder sb = new StringBuilder();
-        sb.append("<smil xmlns=\"http://www.w3.org/ns/SMIL\" version=\"3.0\"><body><seq>");
+        sb.append("<smil xmlns=\"http://www.w3.org/ns/SMIL\" xmlns:epub=\"http://www.idpf.org/2007/ops\" version=\"3.0\">");
+        sb.append("<body><seq epub:textref=\"").append(chapterXhtmlPath).append("\">");
 
-        // paragraph index를 키로 빠른 접근
-        ParagraphTts[] byIndex = new ParagraphTts[segments.size() + 1];
-        for (ParagraphTts t : ttsList) byIndex[t.getParagraphIndex()] = t;
+        // 페이지별로 이미지와 오디오 연결
+        for (int i = 0; i < segments.size(); i++) {
+            ParagraphSegment seg = segments.get(i);
+            int pageNum = seg.getIndex();
+            String audioFile = audioDir + "/chap1_p" + pageNum + ".mp3";
+            String pageId = "page" + pageNum;
 
-        for (ParagraphSegment seg : segments) {
-            ParagraphTts tts = byIndex[seg.getIndex()];
-            String audioFile = audioDir + "/chap1_p" + seg.getIndex() + ".mp3";
-
-            List<String> sentences = seg.getSentences();
-            List<SpeechMark> marks = tts.getMarks();
-
-            for (int i = 0; i < sentences.size(); i++) {
-                String textId = "s" + seg.getIndex() + "_" + (i + 1);
-                double beginSec = marks.get(i).getTime() / 1000.0;
-                String clipBegin = String.format("%.3fs", beginSec);
-
-                String clipEnd = null;
-                if (i + 1 < marks.size()) {
-                    double next = marks.get(i + 1).getTime() / 1000.0;
-                    double end = Math.max(beginSec, next - 0.010);
-                    clipEnd = String.format("%.3fs", end);
-                }
-                // If clipEnd is null (last sentence), use total duration of audio file for paragraph
-                if (clipEnd == null && !marks.isEmpty()) {
-                    double last = marks.get(marks.size() - 1).getTime() / 1000.0;
-                    clipEnd = String.format("%.3fs", last);
-                }
-
-                sb.append("<par>");
-                sb.append("<text src=\"").append(chapterXhtmlPath).append("#").append(textId).append("\"/>");
-                sb.append("<audio src=\"").append(audioFile)
-                  .append("\" clipBegin=\"").append(clipBegin)
-                  .append("\" clipEnd=\"").append(clipEnd).append("\"");
-                sb.append("/>");
-                sb.append("</par>");
-            }
+            sb.append("<par id=\"p").append(pageNum).append("\">");
+            sb.append("<text src=\"").append(chapterXhtmlPath).append("#").append(pageId).append("\"/>");
+            sb.append("<audio src=\"").append(audioFile).append("\"/>");
+            sb.append("</par>");
         }
 
         sb.append("</seq></body></smil>");
